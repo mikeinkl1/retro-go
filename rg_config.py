@@ -20,4 +20,6 @@ PROJECT_APPS = {
   'prboom-go':    [0, 0, 786432],
   'gwenesis':     [0, 0, 983040],
   'gw-emulator':  [0, 0, 327680],
+  # This is a hack until I add data partition support ;_;
+  'bigrom-data':  [0, 0, 0x410000],
 }

@@ -249,7 +249,7 @@ bool S9xInitMemory(void)
    Memory.RAM   = (uint8_t*) calloc(RAM_SIZE, 1);
    Memory.SRAM  = (uint8_t*) calloc(SRAM_SIZE, 1);
    Memory.VRAM  = (uint8_t*) calloc(VRAM_SIZE, 1);
-   Memory.ROM   = (uint8_t*) calloc(MAX_ROM_SIZE + 0x200, 1);
+   Memory.ROM   = (uint8_t*) calloc(MAX_ROM_SIZE / 4, 1);
    Memory.FillRAM = (uint8_t*) calloc(0x8000, 1);
 
    IPPU.TileCache = (uint8_t*) calloc(MAX_2BIT_TILES, 128);
@@ -351,6 +351,8 @@ again:
    }
    TotalFileSize = Memory.ROM_Size;
 
+   printf("Memory.ROM=%p, Memory.ROM_Size=%d\n", Memory.ROM, Memory.ROM_Size);
+
    if (TotalFileSize > MAX_ROM_SIZE)
    {
       printf("WARNING: ROM TOO BIG (%d)!\n", TotalFileSize);
@@ -362,6 +364,7 @@ again:
       return false; /* it ends here */
    }
 
+#if 0
    // CheckForIPSPatch(filename, Memory.HeaderCount != 0, &TotalFileSize);
    /* fix hacked games here. */
    if ((strncmp("HONKAKUHA IGO GOSEI", (char*)&Memory.ROM[0x7FC0], 19) == 0) && (Memory.ROM[0x7FD5] != 0x31))
@@ -419,7 +422,7 @@ again:
       Memory.ROM[0x18041E] = 0x79;
    }
 #endif
-
+#endif
    uint8_t* RomHeader = Memory.ROM;
 
    hi_score = ScoreHiROM(true, 0);
@@ -433,7 +436,7 @@ again:
    }
 
    Memory.CalculatedSize = TotalFileSize & ~0x1FFF; /* round down to lower 0x2000 */
-   memset(Memory.ROM + Memory.CalculatedSize, 0, MAX_ROM_SIZE - Memory.CalculatedSize);
+   // memset(Memory.ROM + Memory.CalculatedSize, 0, MAX_ROM_SIZE - Memory.CalculatedSize);
 
    if (Memory.CalculatedSize > 0x400000 &&
          !(Memory.ROM[0x7FD5] == 0x32 && ((Memory.ROM[0x7FD6] & 0xF0) == 0x40)) && /* exclude S-DD1 */

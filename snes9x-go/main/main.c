@@ -1,3 +1,4 @@
+#include <esp_partition.h>
 #include <rg_system.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -298,7 +299,35 @@ void app_main(void)
     if (!S9xInitGFX())
         RG_PANIC("Graphics init failed!");
 
-    if (!LoadROM(app->romPath))
+    FILE *fp = fopen(app->romPath, "rb");
+    if (!fp)
+        RG_PANIC("Rom opening failed");
+
+    const esp_partition_t *part;
+    spi_flash_mmap_handle_t handle;
+    esp_err_t err;
+    const void* data;
+
+    part = esp_partition_find_first(0x00, 0xFF, "bigrom-data");
+    if ((err = esp_partition_erase_range(part, 0, MAX_ROM_SIZE)))
+        printf("erase: %03X\n", err);
+
+    Memory.ROM_Size = 0;
+    for (size_t x; (x = fread(Memory.ROM, 1, 0x80000, fp));)
+    {
+        if ((err = esp_partition_write(part, Memory.ROM_Size, Memory.ROM, x)))
+            printf("write: %03X\n", err);
+        Memory.ROM_Size += x;
+    }
+
+    free(Memory.ROM);
+
+    err = esp_partition_mmap(part, 0, MAX_ROM_SIZE - 0x10000, SPI_FLASH_MMAP_DATA, &data, &handle);
+    printf("%03X, %p, %d\n", err, data, part->size);
+
+    Memory.ROM = (void *)data;
+
+    if (!LoadROM(NULL))
         RG_PANIC("ROM loading failed!");
 
 #ifdef USE_BLARGG_APU
